@@ -3,6 +3,7 @@ package com.example.demo.controller;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -26,8 +27,79 @@ import org.springframework.test.web.servlet.MockMvc;
 @SpringBootTest
 @AutoConfigureMockMvc
 class DemoControllerTest {
+
     @Autowired
     private MockMvc mockMvc;
 
-    // add your test cases here
+    @ParameterizedTest
+    @CsvSource({
+            "eloquent, loquen",
+            "country, ountr",
+            "person, erso",
+            "xyz, y",
+            "12345, 234",
+            "@hello!, hello",
+            "1@2, @"
+    })
+    void shouldRemoveFirstAndLastCharacter(
+            String original,
+            String expected) throws Exception {
+
+        mockMvc.perform(get("/remove")
+                        .param("original", original))
+                .andExpect(status().isOk())
+                .andExpect(content().string(expected));
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "ab",
+            "12",
+            "@#"
+    })
+    void shouldReturnEmptyStringForTwoCharacterString(
+            String original) throws Exception {
+
+        mockMvc.perform(get("/remove")
+                        .param("original", original))
+                .andExpect(status().isOk())
+                .andExpect(content().string(""));
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "a",
+            "1",
+            "@"
+    })
+    void shouldReturnBadRequestForOneCharacterString(
+            String original) throws Exception {
+
+        mockMvc.perform(get("/remove")
+                        .param("original", original))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void shouldReturnBadRequestForEmptyString() throws Exception {
+
+        mockMvc.perform(get("/remove")
+                        .param("original", ""))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void shouldHandleNumbersAndSpecialCharacters() throws Exception {
+
+        /*
+         * According to the stated requirement, only the first and last
+         * characters are removed.
+         *
+         * 123%qwerty+ -> 23%qwerty
+         */
+        mockMvc.perform(get("/remove")
+                        .param("original", "123%qwerty+"))
+                .andExpect(status().isOk())
+                .andExpect(content().string("23%qwerty"));
+    }
 }
